@@ -12,7 +12,7 @@ func filesRouter(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()       //オプションを解析します。デフォルトでは解析しません。
 
 	if r.URL.Path == "/files/" && r.Method == "GET" {
-		data := FetchFileList(r);
+		data := controllers.FetchFileList(r);
 		fmt.Fprintf(w, data) //ここでwに入るものがクライアントに出力されます。
 		return
 	}
