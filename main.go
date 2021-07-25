@@ -19,10 +19,10 @@ func filesRouter(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-//	env := "local"
-//	database.DBInit(env)
-//	db := database.GetDatabase()
-//	defer db.Close()
+	env := "local"
+	database.DBInit(env)
+	db := database.GetDatabase()
+	defer db.Close()
 
 	// ルーティング
 	http.HandleFunc("/files/", filesRouter)
