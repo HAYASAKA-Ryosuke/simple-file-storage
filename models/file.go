@@ -1,19 +1,19 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/HAYASAKA-Ryosuke/simple-file-storage/database"
 )
 
 type File struct {
-	Id        int32     `json:"Id"`
-	Title     string    `json:"title"`
-	CreatedAt time.Time `json:"createdat"`
-	UpdatedAt time.Time `json:"updatedat"`
+	Id        int32  `json:"Id"`
+	Title     string `json:"title"`
+	CreatedAt string `json:"createdat"`
+	UpdatedAt string `json:"updatedat"`
 }
 
 func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
@@ -56,7 +56,11 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	var rows *sql.Rows
 	var err error
 
-	rows, err = db.Query(sqlStr, search, page*limit, page*limit+limit)
+	if search != "" {
+		rows, err = db.Query(sqlStr, search, page*limit, page*limit+limit)
+	} else {
+		rows, err = db.Query(fmt.Sprintf(`SELECT id, title, createdat, updatedat FROM file`))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +69,7 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	var files []*File
 
 	for rows.Next() {
-		var l File
+		l := &File{}
 		err := rows.Scan(
 			&l.Id,
 			&l.Title,
@@ -75,7 +79,7 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, &l)
+		files = append(files, l)
 	}
 	return files, nil
 }
@@ -102,4 +106,28 @@ func FetchFileCount(search string) (int, error) {
 		return -1, err
 	}
 	return totalCount, nil
+}
+
+func CreateFile(fileName string) (*File, error) {
+	var ctx context.Context
+	db := database.GetDatabase()
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil {
+		return nil, err
+	}
+	sqlStr := `INSERT INTO file(title) VALUES(?)`
+
+	result, execErr := db.ExecContext(ctx, sqlStr, fileName)
+	if execErr != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return nil, rollbackErr
+		}
+		return nil, execErr
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	rows, err := result.RowsAffected()
+
+	return file, nil
 }
