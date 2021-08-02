@@ -35,31 +35,41 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 		}
 		orderBy = whiteListValue
 	}
-	searchColumn := ""
+	var sqlStr string
 	if search != "" {
-		searchColumn = "WHERE title LIKE %?%"
+		sqlStr = `
+	        SELECT
+			id,
+			title,
+			createdat
+			updatedat
+		FROM
+			file
+		WHERE title LIKE %?%
+		ORDER BY ? ?
+		LIMIT ?, ?
+		`
+	} else {
+		sqlStr = `
+	        SELECT
+			id,
+			title,
+			createdat
+			updatedat
+		FROM
+			file
+		ORDER BY ? ?
+		LIMIT ?, ?
+	        `
 	}
-
-	sqlStr := fmt.Sprintf(`
-	SELECT
-		id,
-		title,
-		createdat
-		updatedat
-	FROM
-		file
-	%s
-	ORDER BY %s %s
-	LIMIT ?, ?
-	`, searchColumn, orderBy, ascOrDesc)
 
 	var rows *sql.Rows
 	var err error
 
 	if search != "" {
-		rows, err = db.Query(sqlStr, search, page*limit, page*limit+limit)
+		rows, err = db.Query(sqlStr, search, orderBy, ascOrDesc, page*limit, page*limit+limit)
 	} else {
-		rows, err = db.Query(fmt.Sprintf(`SELECT id, title, createdat, updatedat FROM file`))
+		rows, err = db.Query(sqlStr, orderBy, ascOrDesc, page*limit, page*limit+limit)
 	}
 	if err != nil {
 		return nil, err
