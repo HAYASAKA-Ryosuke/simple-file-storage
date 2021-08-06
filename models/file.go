@@ -118,26 +118,28 @@ func FetchFileCount(search string) (int, error) {
 	return totalCount, nil
 }
 
-func CreateFile(fileName string) (*File, error) {
+func CreateFile(fileName string) (int64, error) {
 	var ctx context.Context
 	db := database.GetDatabase()
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 	sqlStr := `INSERT INTO file(title) VALUES(?)`
 
 	result, execErr := db.ExecContext(ctx, sqlStr, fileName)
 	if execErr != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return nil, rollbackErr
+			return -1, rollbackErr
 		}
-		return nil, execErr
+		return -1, execErr
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return -1, err
 	}
-	rows, err := result.RowsAffected()
-
-	return file, nil
+	fileId, err := result.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+	return fileId, nil
 }

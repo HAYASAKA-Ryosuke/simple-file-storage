@@ -25,12 +25,12 @@ func FetchFiles(search string, sort string, page, limit int) ([]*models.File, in
 }
 
 func CreateFile(fileForm multipart.File, fileName string) (bool, error) {
-	file, err := models.createFile(fileName)
+	fileId, err := models.CreateFile(fileName)
 	if err != nil {
 		fmt.Println("error", err)
 		return false, errors.New("internal error")
 	}
-	writeFile, err := os.Create(string(file.id))
+	writeFile, err := os.Create(string(fileId))
 	defer writeFile.Close()
 	if err != nil {
 		return false, errors.New("failed create file")
