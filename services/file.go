@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"strconv"
 
 	"github.com/HAYASAKA-Ryosuke/simple-file-storage/models"
 )
@@ -30,7 +31,7 @@ func CreateFile(fileForm multipart.File, fileName string) (bool, error) {
 		fmt.Println("error", err)
 		return false, errors.New("internal error")
 	}
-	writeFile, err := os.Create(string(fileId))
+	writeFile, err := os.Create(strconv.FormatInt(fileId, 10))
 	defer writeFile.Close()
 	if err != nil {
 		return false, errors.New("failed create file")
