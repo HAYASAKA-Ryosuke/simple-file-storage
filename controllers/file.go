@@ -33,8 +33,6 @@ func FetchFileList(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 	files, totalCount, err := services.FetchFiles(search, sort, page, limit)
-	fmt.Println(files)
-	fmt.Println(totalCount)
 	jsonString, _ := json.Marshal(map[string]interface{}{"files": files, "totalCount": totalCount})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonString)
@@ -43,6 +41,9 @@ func FetchFileList(w http.ResponseWriter, r *http.Request) {
 func CreateFile(w http.ResponseWriter, r *http.Request) {
 	formFile, handler, err := r.FormFile("file")
 	if err != nil {
+		w.Header().Set("Content-Type", "applicatoin/json")
+		jsonString, _ := json.Marshal(map[string]interface{}{"isSuccess": false, "message": err})
+		w.Write(jsonString)
 		return
 	}
 

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,14 +9,14 @@ import (
 )
 
 type File struct {
-	Id        int32  `json:"Id"`
+	Id        int    `json:"Id"`
 	Title     string `json:"title"`
 	CreatedAt string `json:"createdat"`
 	UpdatedAt string `json:"updatedat"`
 }
 
 func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
-	whiteList := map[string]string{"Id": "id", "title": "Title", "createdAt": "createdat", "updatedAt": "updatedat"}
+	whiteList := map[string]string{"Id": "id", "Title": "title", "createdAt": "createdat", "updatedAt": "updatedat"}
 	db := database.GetDatabase()
 	orderBy := ""
 	ascOrDesc := "ASC"
@@ -39,26 +38,20 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	if search != "" {
 		sqlStr = `
 	        SELECT
-			id,
-			title,
-			createdat
-			updatedat
+		*
 		FROM
 			file
 		WHERE title LIKE %?%
-		ORDER BY ? ?
+		ORDER BY ?
 		LIMIT ?, ?
 		`
 	} else {
 		sqlStr = `
 	        SELECT
-			id,
-			title,
-			createdat
-			updatedat
+		*
 		FROM
 			file
-		ORDER BY ? ?
+		ORDER BY ?
 		LIMIT ?, ?
 	        `
 	}
@@ -67,9 +60,9 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	var err error
 
 	if search != "" {
-		rows, err = db.Query(sqlStr, search, orderBy, ascOrDesc, page*limit, page*limit+limit)
+		rows, err = db.Query(sqlStr, search, orderBy+" "+ascOrDesc, (page+1)*limit, (page+1)*limit+limit)
 	} else {
-		rows, err = db.Query(sqlStr, orderBy, ascOrDesc, page*limit, page*limit+limit)
+		rows, err = db.Query(sqlStr, orderBy+" "+ascOrDesc, (page+1)*limit, (page+1)*limit+limit)
 	}
 	if err != nil {
 		return nil, err
@@ -87,8 +80,10 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 			&l.UpdatedAt,
 		)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
+		fmt.Println(l)
 		files = append(files, l)
 	}
 	return files, nil
@@ -97,17 +92,24 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 func FetchFileCount(search string) (int, error) {
 	db := database.GetDatabase()
 	searchColumn := ""
+	var sqlStr string
 	if search != "" {
 		searchColumn = "WHERE title LIKE %?%"
+		sqlStr = fmt.Sprintf(`
+		SELECT
+			COUNT(id)
+		FROM
+			file
+		%s
+		`, searchColumn)
+	} else {
+		sqlStr = fmt.Sprintf(`
+		SELECT
+			COUNT(id)
+		FROM
+			file
+		`)
 	}
-
-	sqlStr := fmt.Sprintf(`
-	SELECT
-		COUNT(id)
-	FROM
-		file
-	%s
-	`, searchColumn)
 
 	totalCount := 0
 	row := db.QueryRow(sqlStr, search)
@@ -119,23 +121,12 @@ func FetchFileCount(search string) (int, error) {
 }
 
 func CreateFile(fileName string) (int64, error) {
-	var ctx context.Context
 	db := database.GetDatabase()
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
-	if err != nil {
-		return -1, err
-	}
 	sqlStr := `INSERT INTO file(title) VALUES(?)`
 
-	result, execErr := db.ExecContext(ctx, sqlStr, fileName)
+	result, execErr := db.Exec(sqlStr, fileName)
 	if execErr != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return -1, rollbackErr
-		}
 		return -1, execErr
-	}
-	if err := tx.Commit(); err != nil {
-		return -1, err
 	}
 	fileId, err := result.LastInsertId()
 	if err != nil {

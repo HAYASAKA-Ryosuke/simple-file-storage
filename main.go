@@ -11,12 +11,14 @@ import (
 
 func filesRouter(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
+	log.Println(r.URL.Path)
+	log.Println(r.Method)
 
-	if r.URL.Path == "/files/" && r.Method == "GET" {
+	if r.URL.Path == "/api/files/" && r.Method == "GET" {
 		controllers.FetchFileList(w, r)
 		return
 	}
-	if r.URL.Path == "/files/" && r.Method == "POST" {
+	if r.URL.Path == "/api/files/" && r.Method == "POST" {
 		controllers.CreateFile(w, r)
 		return
 	}
@@ -29,7 +31,7 @@ func main() {
 	defer db.Close()
 
 	// ルーティング
-	http.HandleFunc("/files/", filesRouter)
+	http.HandleFunc("/api/files/", filesRouter)
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
