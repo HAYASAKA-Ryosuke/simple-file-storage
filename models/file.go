@@ -36,24 +36,24 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	}
 	var sqlStr string
 	if search != "" {
-		sqlStr = `
+		sqlStr = fmt.Sprintf(`
 	        SELECT
 		*
 		FROM
 			file
 		WHERE title LIKE %?%
-		ORDER BY ?
+		ORDER BY %s
 		LIMIT ?, ?
-		`
+		`, orderBy+" "+ascOrDesc)
 	} else {
-		sqlStr = `
+		sqlStr = fmt.Sprintf(`
 	        SELECT
 		*
 		FROM
 			file
-		ORDER BY ?
+		ORDER BY %s
 		LIMIT ?, ?
-	        `
+	        `, orderBy+" "+ascOrDesc)
 	}
 	fmt.Println(sqlStr)
 
@@ -61,9 +61,9 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	var err error
 
 	if search != "" {
-		rows, err = db.Query(sqlStr, search, orderBy+" "+ascOrDesc, (page-1)*limit, (page-1)*limit+limit)
+		rows, err = db.Query(sqlStr, search, (page-1)*limit, (page-1)*limit+limit)
 	} else {
-		rows, err = db.Query(sqlStr, orderBy+" "+ascOrDesc, (page-1)*limit, (page-1)*limit+limit)
+		rows, err = db.Query(sqlStr, (page-1)*limit, (page-1)*limit+limit)
 	}
 	if err != nil {
 		return nil, err
