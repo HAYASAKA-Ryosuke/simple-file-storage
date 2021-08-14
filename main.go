@@ -7,6 +7,7 @@ import (
 	//"strings"
 	"github.com/HAYASAKA-Ryosuke/simple-file-storage/controllers"
 	"github.com/HAYASAKA-Ryosuke/simple-file-storage/database"
+	"github.com/gorilla/mux"
 )
 
 func filesRouter(w http.ResponseWriter, r *http.Request) {
@@ -24,6 +25,13 @@ func filesRouter(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func fileDownloadRouter(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		controllers.DownloadFile(w, r)
+		return
+	}
+}
+
 func main() {
 	env := "local"
 	database.DBInit(env)
@@ -31,7 +39,10 @@ func main() {
 	defer db.Close()
 
 	// ルーティング
-	http.HandleFunc("/api/files/", filesRouter)
+	router := mux.NewRouter()
+	router.HandleFunc("/api/files/{id:[0-9]+}/", fileDownloadRouter)
+	router.HandleFunc("/api/files/", filesRouter)
+	http.Handle("/", router)
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

@@ -39,3 +39,11 @@ func CreateFile(fileForm multipart.File, fileName string) (bool, error) {
 	io.Copy(writeFile, fileForm)
 	return true, nil
 }
+
+func FetchFile(fileId int) (*models.File, error) {
+	file, err := models.FetchFile(fileId)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}

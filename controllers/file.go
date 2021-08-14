@@ -3,10 +3,12 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	"github.com/HAYASAKA-Ryosuke/simple-file-storage/services"
+	"github.com/gorilla/mux"
 )
 
 type JSONFile struct {
@@ -26,10 +28,10 @@ func FetchFileList(w http.ResponseWriter, r *http.Request) {
 	}
 	page, err := strconv.Atoi(query.Get("page"))
 	if err != nil {
-		page = 0
+		page = 1
 	}
 	limit, err := strconv.Atoi(query.Get("limit"))
-	if err == nil {
+	if err != nil {
 		limit = 50
 	}
 	files, totalCount, err := services.FetchFiles(search, sort, page, limit)
@@ -56,4 +58,22 @@ func CreateFile(w http.ResponseWriter, r *http.Request) {
 	jsonString, _ := json.Marshal(map[string]interface{}{"isSuccess": isSuccess})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonString)
+}
+
+func DownloadFile(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fileId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return
+	}
+	file, err := services.FetchFile(fileId)
+	if err != nil {
+		return
+	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", file.Title))
+	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
+	w.Header().Set("Content-Length", r.Header.Get("Content-Length"))
+
+	bytes, _ := ioutil.ReadFile(strconv.Itoa(file.Id))
+	w.Write(bytes)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type File struct {
-	Id        int    `json:"Id"`
+	Id        int    `json:"id"`
 	Title     string `json:"title"`
 	CreatedAt string `json:"createdat"`
 	UpdatedAt string `json:"updatedat"`
@@ -18,7 +18,7 @@ type File struct {
 func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 	whiteList := map[string]string{"Id": "id", "Title": "title", "createdAt": "createdat", "updatedAt": "updatedat"}
 	db := database.GetDatabase()
-	orderBy := ""
+	orderBy := "Id"
 	ascOrDesc := "ASC"
 	if sort[0] == '-' {
 		whiteListValue, ok := whiteList[sort[1:]]
@@ -55,14 +55,15 @@ func FetchFileMany(search, sort string, page, limit int) ([]*File, error) {
 		LIMIT ?, ?
 	        `
 	}
+	fmt.Println(sqlStr)
 
 	var rows *sql.Rows
 	var err error
 
 	if search != "" {
-		rows, err = db.Query(sqlStr, search, orderBy+" "+ascOrDesc, (page+1)*limit, (page+1)*limit+limit)
+		rows, err = db.Query(sqlStr, search, orderBy+" "+ascOrDesc, (page-1)*limit, (page-1)*limit+limit)
 	} else {
-		rows, err = db.Query(sqlStr, orderBy+" "+ascOrDesc, (page+1)*limit, (page+1)*limit+limit)
+		rows, err = db.Query(sqlStr, orderBy+" "+ascOrDesc, (page-1)*limit, (page-1)*limit+limit)
 	}
 	if err != nil {
 		return nil, err
@@ -133,4 +134,14 @@ func CreateFile(fileName string) (int64, error) {
 		return -1, err
 	}
 	return fileId, nil
+}
+
+func FetchFile(fileId int) (*File, error) {
+	db := database.GetDatabase()
+	sqlStr := `SELECT * FROM file WHERE id = ?`
+	file := &File{}
+	if err := db.QueryRow(sqlStr, "2").Scan(&file.Id, &file.Title, &file.CreatedAt, &file.UpdatedAt); err != nil {
+		return nil, errors.New("file record not found")
+	}
+	return file, nil
 }
