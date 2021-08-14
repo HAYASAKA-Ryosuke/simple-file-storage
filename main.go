@@ -40,7 +40,7 @@ func main() {
 
 	// ルーティング
 	router := mux.NewRouter()
-	router.HandleFunc("/api/files/{id:[0-9]+}/", fileDownloadRouter)
+	router.HandleFunc("/api/files/{id:[0-9]+}/download/", fileDownloadRouter)
 	router.HandleFunc("/api/files/", filesRouter)
 	http.Handle("/", router)
 	err := http.ListenAndServe(":9090", nil)
